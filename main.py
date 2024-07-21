@@ -27,6 +27,14 @@ def read_map(bin_data, location, rows, cols, bit, math_func):
         data.append([math_func(x) for x in row])
     return np.array(data)
 
+# Read an inverse map from the .bin file (12x16)
+def read_inverse_map(bin_data, location, rows, cols, bit, math_func):
+    data = []
+    for i in range(cols):
+        col = read_bin_data(bin_data, location + i * rows * (bit // 8), rows, bit)
+        data.append([math_func(x) for x in col])
+    return np.array(data).T
+
 # Write 16-bit or 8-bit values to the .bin file
 def write_bin_data(bin_data, location, data, bit):
     if bit == 16:
@@ -46,6 +54,13 @@ def write_map(bin_data, location, data, bit, inverse_math_func):
         row_data = [inverse_math_func(value) for value in data[i]]
         write_bin_data(bin_data, location + i * cols * (bit // 8), row_data, bit)
 
+# Write an inverse map to the .bin file (12x16)
+def write_inverse_map(bin_data, location, data, bit, inverse_math_func):
+    rows, cols = data.shape
+    for i in range(cols):
+        col_data = [inverse_math_func(value) for value in data[:, i]]
+        write_bin_data(bin_data, location + i * rows * (bit // 8), col_data, bit)
+
 def main():
     st.title("ECU Map Rescaler - Advanced Mode")
 
@@ -62,9 +77,9 @@ def main():
             def_details = definitions[definition]
 
             # Read the airflow map and its axes
-            airflow_map = read_map(bin_data, def_details["airflow_map"]["location"], 
-                                   def_details["airflow_map"]["size"][0], def_details["airflow_map"]["size"][1], 
-                                   def_details["airflow_map"]["bit"], def_details["airflow_map"]["math"])
+            airflow_map = read_inverse_map(bin_data, def_details["airflow_map"]["location"], 
+                                           def_details["airflow_map"]["size"][0], def_details["airflow_map"]["size"][1], 
+                                           def_details["airflow_map"]["bit"], def_details["airflow_map"]["math"])
             airflow_rpm_axis = read_bin_data(bin_data, def_details["airflow_rpm_axis"]["location"], 
                                              def_details["airflow_rpm_axis"]["size"], def_details["airflow_rpm_axis"]["bit"])
             airflow_rpm_axis = [def_details["airflow_rpm_axis"]["math"](x) for x in airflow_rpm_axis]
@@ -85,9 +100,9 @@ def main():
             st.write(airflow_torque_axis)
 
             # Read the reference torque map and its axes
-            reference_torque_map = read_map(bin_data, def_details["reference_torque_map"]["location"], 
-                                            def_details["reference_torque_map"]["size"][0], def_details["reference_torque_map"]["size"][1], 
-                                            def_details["reference_torque_map"]["bit"], def_details["reference_torque_map"]["math"])
+            reference_torque_map = read_inverse_map(bin_data, def_details["reference_torque_map"]["location"], 
+                                                    def_details["reference_torque_map"]["size"][0], def_details["reference_torque_map"]["size"][1], 
+                                                    def_details["reference_torque_map"]["bit"], def_details["reference_torque_map"]["math"])
             reference_torque_rpm_axis = read_bin_data(bin_data, def_details["reference_torque_rpm_axis"]["location"], 
                                                       def_details["reference_torque_rpm_axis"]["size"], def_details["reference_torque_rpm_axis"]["bit"])
             reference_torque_rpm_axis = [def_details["reference_torque_rpm_axis"]["math"](x) for x in reference_torque_rpm_axis]
@@ -128,7 +143,7 @@ def main():
                 st.dataframe(result_df1)
 
                 # Update the .bin file with new airflow map values
-                write_map(bin_data, def_details["airflow_map"]["location"], new_airflow_values, def_details["airflow_map"]["bit"], lambda x: int(x / 0.042389562829))
+                write_inverse_map(bin_data, def_details["airflow_map"]["location"], new_airflow_values, def_details["airflow_map"]["bit"], lambda x: int(x / 0.042389562829))
 
                 # Calculate new reference torque values using the new torque axis
                 reference_torque_per_factor = np.array(reference_torque_map) / np.array(reference_torque_airflow_axis)[:, np.newaxis]
@@ -142,11 +157,8 @@ def main():
                 st.dataframe(result_df2)
 
                 # Update the .bin file with new reference torque map values
-                write_map(bin_data, def_details["reference_torque_map"]["location"], new_reference_torque_values, def_details["reference_torque_map"]["bit"], lambda x: int(x / 0.03125))
+                write_inverse_map(bin_data, def_details["reference_torque_map"]["location"], new_reference_torque_values, def_details["reference_torque_map"]["bit"], lambda x: int(x / 0.03125))
 
                 # Provide option to download the updated .bin file
                 st.header("Step 4: Download the Updated .bin File")
-                st.download_button(label="Download Updated .bin", data=bin_data, file_name="updated_ecu.bin", mime="application/octet-stream")
-
-if __name__ == "__main__":
-    main()
+                st.download_button(label

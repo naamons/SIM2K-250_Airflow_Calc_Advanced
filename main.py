@@ -76,6 +76,14 @@ def main():
             df_airflow = pd.DataFrame(airflow_map, columns=airflow_rpm_axis, index=airflow_torque_axis)
             st.dataframe(df_airflow)
 
+            # Debugging: Show the raw data read from the bin file
+            st.write("#### Raw Airflow Map Data")
+            st.write(airflow_map)
+            st.write("#### Raw Airflow RPM Axis Data")
+            st.write(airflow_rpm_axis)
+            st.write("#### Raw Airflow Torque Axis Data")
+            st.write(airflow_torque_axis)
+
             # Read the reference torque map and its axes
             reference_torque_map = read_map(bin_data, def_details["reference_torque_map"]["location"], 
                                             def_details["reference_torque_map"]["size"][0], def_details["reference_torque_map"]["size"][1], 
@@ -90,6 +98,14 @@ def main():
             st.write("### Original Reference Torque Map")
             df_reference_torque = pd.DataFrame(reference_torque_map, columns=reference_torque_rpm_axis, index=reference_torque_airflow_axis)
             st.dataframe(df_reference_torque)
+
+            # Debugging: Show the raw data read from the bin file
+            st.write("#### Raw Reference Torque Map Data")
+            st.write(reference_torque_map)
+            st.write("#### Raw Reference Torque RPM Axis Data")
+            st.write(reference_torque_rpm_axis)
+            st.write("#### Raw Reference Torque Airflow Axis Data")
+            st.write(reference_torque_airflow_axis)
 
             # Display the extracted torque axis as a text area
             st.header("Step 3: Input New Torque Axis for Airflow Map")

@@ -58,16 +58,7 @@ def write_map(bin_data, location, data, bit, inverse_math_func):
 def write_inverse_map(bin_data, location, data, bit, inverse_math_func):
     rows, cols = data.shape
     for i in range(cols):
-        col_data = []
-        for value in data[:, i]:
-            try:
-                if np.isnan(value):
-                    raise ValueError("Encountered NaN value.")
-                converted_value = inverse_math_func(value)
-                col_data.append(converted_value)
-            except ValueError as e:
-                st.error(f"Error converting value: {value}. Error: {e}")
-                return
+        col_data = [inverse_math_func(value) for value in data[:, i]]
         write_bin_data(bin_data, location + i * rows * (bit // 8), col_data, bit)
 
 def main():
@@ -136,7 +127,8 @@ def main():
                 st.dataframe(result_df1)
 
                 # Calculate the new torque axis for the reference torque map
-                new_reference_torque_axis = [50] + [np.mean(new_airflow_values[:, i]) for i in range(1, new_airflow_values.shape[1])]
+                new_reference_torque_axis = [50]  # Start with 50 as the first value
+                new_reference_torque_axis.extend(np.mean(new_airflow_values, axis=0)[1:])  # Calculate average of each column, excluding the first
                 new_reference_torque_axis = new_reference_torque_axis[:reference_torque_map.shape[0]]  # Ensure correct shape
 
                 # Calculate new reference torque values using the new torque axis

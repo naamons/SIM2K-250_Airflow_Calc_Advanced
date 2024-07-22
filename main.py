@@ -119,7 +119,7 @@ def main():
             new_torque_axis_input1 = st.text_area("New Torque Axis (one value per line)", torque_axis_str1)
             new_torque_axis1 = [float(torque.strip()) for torque in new_torque_axis_input1.split("\n")]
 
-            if st.button("Generate New Airflow Map and Suggest New Torque Map"):
+            if st.button("Generate New Airflow Map and New Torque Map"):
                 # Calculate new airflow values using the new torque axis
                 airflow_per_torque = np.array(airflow_map) / np.array(airflow_torque_axis)[:, np.newaxis]
                 new_airflow_values = airflow_per_torque * np.array(new_torque_axis1)[:, np.newaxis]
@@ -132,13 +132,25 @@ def main():
                 st.dataframe(result_df1)
 
                 # Calculate the suggested new torque map by averaging each row of the new airflow map
-                suggested_new_torque_map = np.mean(new_airflow_values, axis=1)
+                suggested_new_torque_axis = np.mean(new_airflow_values, axis=1)
 
-                # Create a DataFrame to display the suggested new torque map
-                result_df2 = pd.DataFrame(suggested_new_torque_map, columns=["Suggested Torque (Nm)"])
+                # Calculate new torque map values using the suggested new torque axis
+                new_torque_map_values = np.array(new_airflow_values) * suggested_new_torque_axis[:, np.newaxis]
 
-                st.write("### Suggested New Torque Map")
+                # Create a DataFrame to display the new torque map
+                result_df2 = pd.DataFrame(new_torque_map_values, columns=airflow_rpm_axis, index=suggested_new_torque_axis)
+                result_df2.index.name = "Suggested Torque (Nm)"
+
+                st.write("### New Torque Map")
                 st.dataframe(result_df2)
+
+                # Display the new airflow values for debugging
+                st.write("New Airflow Values:")
+                st.write(new_airflow_values)
+
+                # Display the new torque map values for debugging
+                st.write("New Torque Map Values:")
+                st.write(new_torque_map_values)
 
 if __name__ == "__main__":
     main()

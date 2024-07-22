@@ -89,7 +89,7 @@ def main():
     uploaded_bin = st.file_uploader("Upload your ECU .bin file", type="bin")
 
     if uploaded_bin is not None:
-        bin_data = uploaded_bin.read()
+        bin_data = bytearray(uploaded_bin.read())  # Convert to bytearray for mutability
 
         st.header("Step 2: Select Definition")
         definition = st.selectbox("Select the definition:", list(definitions.keys()))
@@ -180,7 +180,7 @@ def main():
 
                 # Provide option to download the updated .bin file
                 st.header("Step 4: Download the Updated .bin File")
-                st.download_button(label="Download Updated .bin", data=bin_data, file_name="updated_ecu.bin", mime="application/octet-stream")
+                st.download_button(label="Download Updated .bin", data=bytes(bin_data), file_name="updated_ecu.bin", mime="application/octet-stream")
 
 if __name__ == "__main__":
     main()

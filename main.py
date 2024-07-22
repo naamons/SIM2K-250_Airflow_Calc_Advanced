@@ -161,4 +161,7 @@ def main():
 
                 # Provide option to download the updated .bin file
                 st.header("Step 4: Download the Updated .bin File")
-                st.download_button(label
+                st.download_button(label="Download Updated .bin", data=bin_data, file_name="updated_ecu.bin", mime="application/octet-stream")
+
+if __name__ == "__main__":
+    main()

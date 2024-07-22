@@ -61,6 +61,8 @@ def write_inverse_map(bin_data, location, data, bit, inverse_math_func):
         col_data = []
         for value in data[:, i]:
             try:
+                if np.isnan(value):
+                    raise ValueError("Encountered NaN value.")
                 converted_value = inverse_math_func(value)
                 col_data.append(converted_value)
             except ValueError as e:
@@ -133,19 +135,22 @@ def main():
                 st.write("### New Airflow Map")
                 st.dataframe(result_df1)
 
-                # Update the .bin file with new airflow map values
-                write_inverse_map(bin_data, def_details["airflow_map"]["location"], new_airflow_values, def_details["airflow_map"]["bit"], lambda x: int(x / 0.042389562829))
+                # Calculate the new torque axis for the reference torque map
+                new_reference_torque_axis = [50] + [np.mean(new_airflow_values[:, i]) for i in range(new_airflow_values.shape[1])]
 
                 # Calculate new reference torque values using the new torque axis
                 reference_torque_per_factor = np.array(reference_torque_map) / np.array(reference_torque_airflow_axis)[:, np.newaxis]
-                new_reference_torque_values = reference_torque_per_factor * np.array(new_torque_axis1)[:, np.newaxis]
+                new_reference_torque_values = reference_torque_per_factor * np.array(new_reference_torque_axis)[:, np.newaxis]
 
                 # Create a DataFrame to display the results
-                result_df2 = pd.DataFrame(new_reference_torque_values, columns=reference_torque_rpm_axis, index=new_torque_axis1)
+                result_df2 = pd.DataFrame(new_reference_torque_values, columns=reference_torque_rpm_axis, index=new_reference_torque_axis)
                 result_df2.index.name = "Reference Torque (Nm)"
 
                 st.write("### New Reference Torque Map")
                 st.dataframe(result_df2)
+
+                # Update the .bin file with new airflow map values
+                write_inverse_map(bin_data, def_details["airflow_map"]["location"], new_airflow_values, def_details["airflow_map"]["bit"], lambda x: int(x / 0.042389562829))
 
                 # Update the .bin file with new reference torque map values
                 write_inverse_map(bin_data, def_details["reference_torque_map"]["location"], new_reference_torque_values, def_details["reference_torque_map"]["bit"], lambda x: int(x / 0.03125))

@@ -59,16 +59,22 @@ def write_inverse_map(bin_data, location, data, bit, inverse_math_func):
     rows, cols = data.shape
     for i in range(cols):
         col_data = []
-        for value in data[:, i]:
+        for j, value in enumerate(data[:, i]):
             try:
+                if np.isnan(value):
+                    st.warning(f"NaN value encountered at row {j}, column {i}")
+                    continue  # Skip this value
                 converted_value = inverse_math_func(value)
                 if not np.isfinite(converted_value):
                     raise ValueError(f"Converted value is not finite: {converted_value}")
                 col_data.append(converted_value)
             except Exception as e:
-                st.error(f"Error converting value: {value}. Error: {str(e)}")
-                st.error(f"Column {i}, data type: {type(value)}")
+                st.error(f"Error converting value: {value} at row {j}, column {i}. Error: {str(e)}")
+                st.error(f"Data type: {type(value)}")
                 return
+        if not col_data:
+            st.error(f"No valid data in column {i}")
+            return
         try:
             write_bin_data(bin_data, location + i * rows * (bit // 8), col_data, bit)
         except Exception as e:
@@ -157,13 +163,21 @@ def main():
                 st.write("### New Reference Torque Map")
                 st.dataframe(result_df2)
 
+                # Display the new airflow values for debugging
+                st.write("New Airflow Values:")
+                st.write(new_airflow_values)
+
+                # Display the new reference torque values for debugging
+                st.write("New Reference Torque Values:")
+                st.write(new_reference_torque_values)
+
                 # Update the .bin file with new airflow map values
                 st.write("Updating airflow map in .bin file...")
-                write_inverse_map(bin_data, def_details["airflow_map"]["location"], new_airflow_values, def_details["airflow_map"]["bit"], lambda x: int(x / 0.042389562829))
+                write_inverse_map(bin_data, def_details["airflow_map"]["location"], new_airflow_values, def_details["airflow_map"]["bit"], lambda x: int(x / 0.042389562829) if x != 0 else 0)
 
                 # Update the .bin file with new reference torque map values
                 st.write("Updating reference torque map in .bin file...")
-                write_inverse_map(bin_data, def_details["reference_torque_map"]["location"], new_reference_torque_values, def_details["reference_torque_map"]["bit"], lambda x: int(x / 0.03125))
+                write_inverse_map(bin_data, def_details["reference_torque_map"]["location"], new_reference_torque_values, def_details["reference_torque_map"]["bit"], lambda x: int(x / 0.03125) if x != 0 else 0)
 
                 # Provide option to download the updated .bin file
                 st.header("Step 4: Download the Updated .bin File")
@@ -171,4 +185,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    

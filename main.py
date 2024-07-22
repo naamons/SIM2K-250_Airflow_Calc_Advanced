@@ -150,9 +150,11 @@ def main():
                 # Calculate the new torque axis for the reference torque map
                 new_reference_torque_axis = np.mean(new_airflow_values, axis=0)
 
+                # Calculate the correction factors from the original reference torque map
+                reference_torque_correction_factors = np.array(reference_torque_map) / np.array(reference_torque_airflow_axis)[:, np.newaxis]
+
                 # Calculate new reference torque values using the new torque axis
-                reference_torque_per_factor = np.array(reference_torque_map) / np.array(reference_torque_airflow_axis)[:, np.newaxis]
-                new_reference_torque_values = reference_torque_per_factor * np.array(new_reference_torque_axis)[np.newaxis, :]
+                new_reference_torque_values = reference_torque_correction_factors * new_reference_torque_axis[np.newaxis, :]
 
                 # Create a DataFrame to display the results
                 result_df2 = pd.DataFrame(new_reference_torque_values, columns=reference_torque_rpm_axis, index=reference_torque_airflow_axis)

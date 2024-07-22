@@ -148,16 +148,14 @@ def main():
                 st.dataframe(result_df1)
 
                 # Calculate the new torque axis for the reference torque map
-                new_reference_torque_axis = [50]  # Start with 50 as the first value
-                new_reference_torque_axis.extend(np.mean(new_airflow_values, axis=0)[1:])  # Calculate average of each column, excluding the first
-                new_reference_torque_axis = new_reference_torque_axis[:reference_torque_map.shape[0]]  # Ensure correct shape
+                new_reference_torque_axis = np.mean(new_airflow_values, axis=0)
 
                 # Calculate new reference torque values using the new torque axis
                 reference_torque_per_factor = np.array(reference_torque_map) / np.array(reference_torque_airflow_axis)[:, np.newaxis]
-                new_reference_torque_values = reference_torque_per_factor * np.array(new_reference_torque_axis)[:, np.newaxis]
+                new_reference_torque_values = reference_torque_per_factor * np.array(new_reference_torque_axis)[np.newaxis, :]
 
                 # Create a DataFrame to display the results
-                result_df2 = pd.DataFrame(new_reference_torque_values, columns=reference_torque_rpm_axis, index=new_reference_torque_axis)
+                result_df2 = pd.DataFrame(new_reference_torque_values, columns=reference_torque_rpm_axis, index=reference_torque_airflow_axis)
                 result_df2.index.name = "Reference Torque (Nm)"
 
                 st.write("### New Reference Torque Map")

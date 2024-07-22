@@ -170,5 +170,17 @@ def main():
                 st.write("New Torque Map Values:")
                 st.write(new_torque_map_values)
 
+                # Update the .bin file with new airflow map values
+                st.write("Updating airflow map in .bin file...")
+                write_inverse_map(bin_data, def_details["airflow_map"]["location"], new_airflow_values, def_details["airflow_map"]["bit"], lambda x: int(x / 0.042389562829) if x != 0 else 0)
+
+                # Update the .bin file with new reference torque map values
+                st.write("Updating reference torque map in .bin file...")
+                write_inverse_map(bin_data, def_details["reference_torque_map"]["location"], new_torque_map_values, def_details["reference_torque_map"]["bit"], lambda x: int(x / 0.03125) if x != 0 else 0)
+
+                # Provide option to download the updated .bin file
+                st.header("Step 4: Download the Updated .bin File")
+                st.download_button(label="Download Updated .bin", data=bin_data, file_name="updated_ecu.bin", mime="application/octet-stream")
+
 if __name__ == "__main__":
     main()

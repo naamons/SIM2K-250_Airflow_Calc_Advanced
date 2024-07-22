@@ -58,8 +58,23 @@ def write_map(bin_data, location, data, bit, inverse_math_func):
 def write_inverse_map(bin_data, location, data, bit, inverse_math_func):
     rows, cols = data.shape
     for i in range(cols):
-        col_data = [inverse_math_func(value) for value in data[:, i]]
-        write_bin_data(bin_data, location + i * rows * (bit // 8), col_data, bit)
+        col_data = []
+        for value in data[:, i]:
+            try:
+                converted_value = inverse_math_func(value)
+                if not np.isfinite(converted_value):
+                    raise ValueError(f"Converted value is not finite: {converted_value}")
+                col_data.append(converted_value)
+            except Exception as e:
+                st.error(f"Error converting value: {value}. Error: {str(e)}")
+                st.error(f"Column {i}, data type: {type(value)}")
+                return
+        try:
+            write_bin_data(bin_data, location + i * rows * (bit // 8), col_data, bit)
+        except Exception as e:
+            st.error(f"Error writing data to binary. Error: {str(e)}")
+            st.error(f"Column {i}, data: {col_data}")
+            return
 
 def main():
     st.title("ECU Map Rescaler - Advanced Mode")
@@ -143,9 +158,11 @@ def main():
                 st.dataframe(result_df2)
 
                 # Update the .bin file with new airflow map values
+                st.write("Updating airflow map in .bin file...")
                 write_inverse_map(bin_data, def_details["airflow_map"]["location"], new_airflow_values, def_details["airflow_map"]["bit"], lambda x: int(x / 0.042389562829))
 
                 # Update the .bin file with new reference torque map values
+                st.write("Updating reference torque map in .bin file...")
                 write_inverse_map(bin_data, def_details["reference_torque_map"]["location"], new_reference_torque_values, def_details["reference_torque_map"]["bit"], lambda x: int(x / 0.03125))
 
                 # Provide option to download the updated .bin file
@@ -154,3 +171,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    

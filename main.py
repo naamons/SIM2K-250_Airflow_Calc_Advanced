@@ -137,6 +137,7 @@ def main():
 
                 # Calculate the new torque axis for the reference torque map
                 new_reference_torque_axis = [50] + [np.mean(new_airflow_values[:, i]) for i in range(new_airflow_values.shape[1])]
+                new_reference_torque_axis = new_reference_torque_axis[:reference_torque_map.shape[0]]  # Ensure correct shape
 
                 # Calculate new reference torque values using the new torque axis
                 reference_torque_per_factor = np.array(reference_torque_map) / np.array(reference_torque_airflow_axis)[:, np.newaxis]
@@ -157,7 +158,4 @@ def main():
 
                 # Provide option to download the updated .bin file
                 st.header("Step 4: Download the Updated .bin File")
-                st.download_button(label="Download Updated .bin", data=bin_data, file_name="updated_ecu.bin", mime="application/octet-stream")
-
-if __name__ == "__main__":
-    main()
+                st.download_button(label="Download Updated .bin", data=bin_data, file_name="updated_ecu.bin", mime="

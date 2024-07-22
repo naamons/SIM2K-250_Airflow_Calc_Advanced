@@ -58,7 +58,14 @@ def write_map(bin_data, location, data, bit, inverse_math_func):
 def write_inverse_map(bin_data, location, data, bit, inverse_math_func):
     rows, cols = data.shape
     for i in range(cols):
-        col_data = [inverse_math_func(value) for value in data[:, i]]
+        col_data = []
+        for value in data[:, i]:
+            try:
+                converted_value = inverse_math_func(value)
+                col_data.append(converted_value)
+            except ValueError as e:
+                st.error(f"Error converting value: {value}. Error: {e}")
+                return
         write_bin_data(bin_data, location + i * rows * (bit // 8), col_data, bit)
 
 def main():

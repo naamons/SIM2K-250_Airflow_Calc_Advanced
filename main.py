@@ -112,6 +112,21 @@ def main():
             df_airflow = pd.DataFrame(airflow_map, columns=airflow_rpm_axis, index=airflow_torque_axis)
             st.dataframe(df_airflow)
 
+            # Read the reference torque map and its axes
+            reference_torque_map = read_inverse_map(bin_data, def_details["reference_torque_map"]["location"], 
+                                                    def_details["reference_torque_map"]["size"][0], def_details["reference_torque_map"]["size"][1], 
+                                                    def_details["reference_torque_map"]["bit"], def_details["reference_torque_map"]["math"])
+            reference_torque_rpm_axis = read_bin_data(bin_data, def_details["reference_torque_rpm_axis"]["location"], 
+                                                      def_details["reference_torque_rpm_axis"]["size"], def_details["reference_torque_rpm_axis"]["bit"])
+            reference_torque_rpm_axis = [def_details["reference_torque_rpm_axis"]["math"](x) for x in reference_torque_rpm_axis]
+            reference_torque_airflow_axis = read_bin_data(bin_data, def_details["reference_torque_airflow_axis"]["location"], 
+                                                          def_details["reference_torque_airflow_axis"]["size"], def_details["reference_torque_airflow_axis"]["bit"])
+            reference_torque_airflow_axis = [def_details["reference_torque_airflow_axis"]["math"](x) for x in reference_torque_airflow_axis]
+
+            st.write("### Original Reference Torque Map")
+            df_reference_torque = pd.DataFrame(reference_torque_map, columns=reference_torque_rpm_axis, index=reference_torque_airflow_axis)
+            st.dataframe(df_reference_torque)
+
             st.header("Step 3: Input New Torque Axis for Airflow Map")
             st.write("The values below are extracted from the uploaded template. You can edit them if needed.")
             
@@ -134,11 +149,14 @@ def main():
                 # Calculate the suggested new torque map by averaging each row of the new airflow map
                 suggested_new_torque_axis = np.mean(new_airflow_values, axis=1)
 
-                # Calculate new torque map values using the suggested new torque axis
-                new_torque_map_values = np.array(new_airflow_values) * suggested_new_torque_axis[:, np.newaxis]
+                # Calculate the correction factors from the original reference torque map
+                reference_torque_correction_factors = np.array(reference_torque_map) / np.array(reference_torque_airflow_axis)[:, np.newaxis]
+
+                # Calculate new torque map values using the new torque axis
+                new_torque_map_values = np.array(reference_torque_map) * (np.array(suggested_new_torque_axis)[:, np.newaxis] / np.array(reference_torque_airflow_axis)[:, np.newaxis])
 
                 # Create a DataFrame to display the new torque map
-                result_df2 = pd.DataFrame(new_torque_map_values, columns=airflow_rpm_axis, index=suggested_new_torque_axis)
+                result_df2 = pd.DataFrame(new_torque_map_values, columns=reference_torque_rpm_axis, index=suggested_new_torque_axis)
                 result_df2.index.name = "Suggested Torque (Nm)"
 
                 st.write("### New Torque Map")

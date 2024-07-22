@@ -112,22 +112,6 @@ def main():
             df_airflow = pd.DataFrame(airflow_map, columns=airflow_rpm_axis, index=airflow_torque_axis)
             st.dataframe(df_airflow)
 
-            # Read the reference torque map and its axes
-            reference_torque_map = read_inverse_map(bin_data, def_details["reference_torque_map"]["location"], 
-                                                    def_details["reference_torque_map"]["size"][0], def_details["reference_torque_map"]["size"][1], 
-                                                    def_details["reference_torque_map"]["bit"], def_details["reference_torque_map"]["math"])
-            reference_torque_rpm_axis = read_bin_data(bin_data, def_details["reference_torque_rpm_axis"]["location"], 
-                                                      def_details["reference_torque_rpm_axis"]["size"], def_details["reference_torque_rpm_axis"]["bit"])
-            reference_torque_rpm_axis = [def_details["reference_torque_rpm_axis"]["math"](x) for x in reference_torque_rpm_axis]
-            reference_torque_airflow_axis = read_bin_data(bin_data, def_details["reference_torque_airflow_axis"]["location"], 
-                                                          def_details["reference_torque_airflow_axis"]["size"], def_details["reference_torque_airflow_axis"]["bit"])
-            reference_torque_airflow_axis = [def_details["reference_torque_airflow_axis"]["math"](x) for x in reference_torque_airflow_axis]
-
-            st.write("### Original Reference Torque Map")
-            df_reference_torque = pd.DataFrame(reference_torque_map, columns=reference_torque_rpm_axis, index=reference_torque_airflow_axis)
-            st.dataframe(df_reference_torque)
-
-            # Display the extracted torque axis as a text area
             st.header("Step 3: Input New Torque Axis for Airflow Map")
             st.write("The values below are extracted from the uploaded template. You can edit them if needed.")
             
@@ -135,7 +119,7 @@ def main():
             new_torque_axis_input1 = st.text_area("New Torque Axis (one value per line)", torque_axis_str1)
             new_torque_axis1 = [float(torque.strip()) for torque in new_torque_axis_input1.split("\n")]
 
-            if st.button("Generate New Maps and Update .bin"):
+            if st.button("Generate New Airflow Map and Suggest New Torque Map"):
                 # Calculate new airflow values using the new torque axis
                 airflow_per_torque = np.array(airflow_map) / np.array(airflow_torque_axis)[:, np.newaxis]
                 new_airflow_values = airflow_per_torque * np.array(new_torque_axis1)[:, np.newaxis]
@@ -147,41 +131,14 @@ def main():
                 st.write("### New Airflow Map")
                 st.dataframe(result_df1)
 
-                # Calculate the new torque axis for the reference torque map
-                new_reference_torque_axis = np.mean(new_airflow_values, axis=0)
+                # Calculate the suggested new torque map by averaging each row of the new airflow map
+                suggested_new_torque_map = np.mean(new_airflow_values, axis=1)
 
-                # Calculate the correction factors from the original reference torque map
-                reference_torque_correction_factors = np.array(reference_torque_map) / np.array(reference_torque_airflow_axis)[:, np.newaxis]
+                # Create a DataFrame to display the suggested new torque map
+                result_df2 = pd.DataFrame(suggested_new_torque_map, columns=["Suggested Torque (Nm)"])
 
-                # Calculate new reference torque values using the new torque axis
-                new_reference_torque_values = reference_torque_correction_factors * new_reference_torque_axis[np.newaxis, :]
-
-                # Create a DataFrame to display the results
-                result_df2 = pd.DataFrame(new_reference_torque_values, columns=reference_torque_rpm_axis, index=reference_torque_airflow_axis)
-                result_df2.index.name = "Reference Torque (Nm)"
-
-                st.write("### New Reference Torque Map")
+                st.write("### Suggested New Torque Map")
                 st.dataframe(result_df2)
-
-                # Display the new airflow values for debugging
-                st.write("New Airflow Values:")
-                st.write(new_airflow_values)
-
-                # Display the new reference torque values for debugging
-                st.write("New Reference Torque Values:")
-                st.write(new_reference_torque_values)
-
-                # Update the .bin file with new airflow map values
-                st.write("Updating airflow map in .bin file...")
-                write_inverse_map(bin_data, def_details["airflow_map"]["location"], new_airflow_values, def_details["airflow_map"]["bit"], lambda x: int(x / 0.042389562829) if x != 0 else 0)
-
-                # Update the .bin file with new reference torque map values
-                st.write("Updating reference torque map in .bin file...")
-                write_inverse_map(bin_data, def_details["reference_torque_map"]["location"], new_reference_torque_values, def_details["reference_torque_map"]["bit"], lambda x: int(x / 0.03125) if x != 0 else 0)
-
-                # Provide option to download the updated .bin file
-                st.header("Step 4: Download the Updated .bin File")
-                st.download_button(label="Download Updated .bin", data=bin_data, file_name="updated_ecu.bin", mime="application/octet-stream")
 
 if __name__ == "__main__":
     main()
